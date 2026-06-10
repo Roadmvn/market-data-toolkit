@@ -3,6 +3,8 @@
 #include <array>
 #include <cctype>
 #include <charconv>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <stdexcept>
 
@@ -20,6 +22,23 @@ bool parse_number(std::string_view field, T& out) {
     auto [ptr, ec] = std::from_chars(first, last, out);
     return ec == std::errc{} && ptr == last;
 }
+
+#if !(defined(__cpp_lib_to_chars) && __cpp_lib_to_chars >= 201611L)
+// Apple's libc++ still ships std::from_chars for integers only, so double
+// fields fall back to strtod on a null-terminated stack copy. The program
+// never calls setlocale, so the decimal separator stays '.'.
+bool parse_number(std::string_view field, double& out) {
+    std::array<char, 64> buf;
+    if (field.empty() || field.size() >= buf.size()) {
+        return false;
+    }
+    std::memcpy(buf.data(), field.data(), field.size());
+    buf[field.size()] = '\0';
+    char* end = nullptr;
+    out = std::strtod(buf.data(), &end);
+    return end == buf.data() + field.size();
+}
+#endif
 
 bool parse_bool(std::string_view field, bool& out) {
     if (field == "true" || field == "True" || field == "TRUE" || field == "1") {

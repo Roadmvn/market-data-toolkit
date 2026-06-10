@@ -17,7 +17,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-Requires CMake 3.20+ and a C++20 compiler with floating-point `std::from_chars` (GCC 11+, recent Clang/libc++).
+Requires CMake 3.20+ and a C++20 compiler. On toolchains whose standard library lacks floating-point `std::from_chars` (Apple's libc++), the parser falls back to `strtod` automatically.
 
 ## Usage
 
